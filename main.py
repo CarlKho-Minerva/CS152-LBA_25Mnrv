@@ -55,14 +55,32 @@ def run_expert_system_gui():
             chosen = []
             for i, ans in enumerate(answers):
                 label = askables[i][0]
-                val = ans.replace("short_ride", "a short ride").replace("walk", "walking distance").replace("far", "far from residence")
-                val = val.replace("yes", "Yes").replace("no", "No")
+                val = ans
+                if val == "short_ride":
+                    val = "a short ride"
+                elif val == "walk":
+                    val = "walking distance"
+                elif val == "far":
+                    val = "far from residence"
+                elif val == "yes":
+                    val = "Yes"
+                elif val == "no":
+                    val = "No"
                 chosen.append(f"{label} {val}")
             if current[0] < len(askables):
                 if var.get():
                     label = askables[current[0]][0]
-                    val = var.get().replace("short_ride", "a short ride").replace("walk", "walking distance").replace("far", "far from residence")
-                    val = val.replace("yes", "Yes").replace("no", "No")
+                    val = var.get()
+                    if val == "short_ride":
+                        val = "a short ride"
+                    elif val == "walk":
+                        val = "walking distance"
+                    elif val == "far":
+                        val = "far from residence"
+                    elif val == "yes":
+                        val = "Yes"
+                    elif val == "no":
+                        val = "No"
                     chosen.append(f"{label} {val}")
             selected_label.config(text="Choices so far:\n" + "\n".join(chosen))
         else:
@@ -97,8 +115,14 @@ def run_expert_system_gui():
                 widget.destroy()
             tk.Label(root, text="Your choices:", font=("Arial", 11, "bold")).pack(pady=2)
             tk.Label(root, text="\n".join([
-                f"{askables[i][0]} {answers[i].replace('short_ride', 'a short ride').replace('walk', 'walking distance').replace('far', 'far from residence').replace('yes', 'Yes').replace('no', 'No')}"
-                for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
+                f"{askables[i][0]} " + (
+                    "a short ride" if answers[i] == "short_ride" else
+                    "walking distance" if answers[i] == "walk" else
+                    "far from residence" if answers[i] == "far" else
+                    "Yes" if answers[i] == "yes" else
+                    "No" if answers[i] == "no" else
+                    answers[i]
+                ) for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
             if results:
                 tk.Label(root, text="Recommended study spots:", font=("Arial", 14)).pack(pady=10)
                 for name in results:
