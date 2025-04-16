@@ -47,6 +47,20 @@ def run_expert_system_gui():
     options_frame.pack()
 
     option_buttons = []
+    selected_label = tk.Label(root, text="", font=("Arial", 11), fg="blue")
+    selected_label.pack(pady=2)
+
+    def update_selected_label():
+        if answers or var.get():
+            chosen = []
+            for i, ans in enumerate(answers):
+                chosen.append(f"{askables[i][0]} {ans}")
+            if current[0] < len(askables):
+                if var.get():
+                    chosen.append(f"{askables[current[0]][0]} {var.get()}")
+            selected_label.config(text="Choices so far:\n" + "\n".join(chosen))
+        else:
+            selected_label.config(text="")
 
     def show_question(idx):
         question_label.config(text=askables[idx][0])
@@ -55,9 +69,10 @@ def run_expert_system_gui():
         var.set("")
         option_buttons.clear()
         for i, opt in enumerate(askables[idx][1]):
-            b = ttk.Radiobutton(options_frame, text=f"{i+1}. {opt}", variable=var, value=opt)
+            b = ttk.Radiobutton(options_frame, text=f"{i+1}. {opt}", variable=var, value=opt, command=update_selected_label)
             b.pack(anchor="w", padx=20, pady=2)
             option_buttons.append(b)
+        update_selected_label()
 
     def summarize_preferences():
         summary = []
@@ -92,6 +107,8 @@ def run_expert_system_gui():
             for widget in root.winfo_children():
                 widget.destroy()
             tk.Label(root, text=summarize_preferences(), font=("Arial", 12), fg="gray").pack(pady=10)
+            tk.Label(root, text="Your choices:", font=("Arial", 11, "bold")).pack(pady=2)
+            tk.Label(root, text="\n".join([f"{askables[i][0]} {answers[i]}" for i in range(len(answers))]), font=("Arial", 11), fg="blue").pack(pady=2)
             if results:
                 tk.Label(root, text="Recommended study spots:", font=("Arial", 14)).pack(pady=10)
                 for name in results:
@@ -109,6 +126,7 @@ def run_expert_system_gui():
             idx = int(event.char) - 1
             if 0 <= idx < len(option_buttons):
                 var.set(askables[current[0]][1][idx])
+                update_selected_label()
         # Enter key to proceed
         if event.keysym == "Return":
             next_question()
