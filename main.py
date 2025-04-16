@@ -47,7 +47,7 @@ def run_expert_system_gui():
     options_frame.pack()
 
     option_buttons = []
-    selected_label = tk.Label(root, text="", font=("Arial", 11), fg="blue")
+    selected_label = tk.Label(root, text="", font=("Arial", 11), fg="gray")
     selected_label.pack(pady=2)
 
     def update_selected_label():
@@ -108,7 +108,7 @@ def run_expert_system_gui():
                 widget.destroy()
             tk.Label(root, text=summarize_preferences(), font=("Arial", 12), fg="gray").pack(pady=10)
             tk.Label(root, text="Your choices:", font=("Arial", 11, "bold")).pack(pady=2)
-            tk.Label(root, text="\n".join([f"{askables[i][0]} {answers[i]}" for i in range(len(answers))]), font=("Arial", 11), fg="blue").pack(pady=2)
+            tk.Label(root, text="\n".join([f"{askables[i][0]} {answers[i]}" for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
             if results:
                 tk.Label(root, text="Recommended study spots:", font=("Arial", 14)).pack(pady=10)
                 for name in results:
