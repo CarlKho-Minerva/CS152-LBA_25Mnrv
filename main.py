@@ -31,28 +31,52 @@ def run_expert_system_gui():
 
     root = tk.Tk()
     root.title("Study Spot Recommender")
-    root.geometry("500x300")
+    root.geometry("520x350")
 
     answers = []
-    current = [0]  # mutable int for closure
+    current = [0]
+
+    instructions = tk.Label(root, text="Answer each question to get a study spot recommendation.\nUse number keys or mouse to select, Enter to continue.", font=("Arial", 11), fg="gray")
+    instructions.pack(pady=5)
 
     question_label = tk.Label(root, text=askables[0][0], font=("Arial", 14))
-    question_label.pack(pady=20)
+    question_label.pack(pady=10)
 
     var = tk.StringVar()
     options_frame = tk.Frame(root)
     options_frame.pack()
+
+    option_buttons = []
 
     def show_question(idx):
         question_label.config(text=askables[idx][0])
         for widget in options_frame.winfo_children():
             widget.destroy()
         var.set("")
-        for opt in askables[idx][1]:
-            b = ttk.Radiobutton(options_frame, text=opt, variable=var, value=opt)
-            b.pack(anchor="w")
+        option_buttons.clear()
+        for i, opt in enumerate(askables[idx][1]):
+            b = ttk.Radiobutton(options_frame, text=f"{i+1}. {opt}", variable=var, value=opt)
+            b.pack(anchor="w", padx=20, pady=2)
+            option_buttons.append(b)
 
-    def next_question():
+    def summarize_preferences():
+        summary = []
+        if answers[0] == "yes":
+            summary.append("free access")
+        if answers[1] == "yes":
+            summary.append("food or coffee available")
+        summary.append(f"{answers[2]} seating")
+        if answers[3] == "yes":
+            summary.append("open late")
+        if answers[4] == "yes":
+            summary.append("strong WiFi")
+        summary.append(f"distance: {answers[5].replace('_', ' ')}")
+        summary.append(f"{answers[6]} environment")
+        if answers[7] == "yes":
+            summary.append("power outlets")
+        return "You want a study spot with " + ', '.join(summary) + "."
+
+    def next_question(event=None):
         sel = var.get()
         if not sel:
             messagebox.showwarning("Input required", "Please select an option.")
@@ -67,17 +91,33 @@ def run_expert_system_gui():
             results = [sol['Name'] for sol in prolog.query(query)]
             for widget in root.winfo_children():
                 widget.destroy()
+            tk.Label(root, text=summarize_preferences(), font=("Arial", 12), fg="gray").pack(pady=10)
             if results:
                 tk.Label(root, text="Recommended study spots:", font=("Arial", 14)).pack(pady=10)
                 for name in results:
                     tk.Label(root, text=f"- {name}", font=("Arial", 12)).pack(anchor="w")
             else:
                 tk.Label(root, text="No matching study spots found.", font=("Arial", 14)).pack(pady=10)
+            def restart():
+                root.destroy()
+                run_expert_system_gui()
+            ttk.Button(root, text="Restart", command=restart).pack(pady=20)
+
+    def on_key(event):
+        # Number key selection
+        if event.char.isdigit():
+            idx = int(event.char) - 1
+            if 0 <= idx < len(option_buttons):
+                var.set(askables[current[0]][1][idx])
+        # Enter key to proceed
+        if event.keysym == "Return":
+            next_question()
 
     next_btn = ttk.Button(root, text="Next", command=next_question)
     next_btn.pack(pady=10)
 
     show_question(0)
+    root.bind("<Key>", on_key)
     root.mainloop()
 
 if __name__ == "__main__":
