@@ -18,6 +18,15 @@ main.py now provides an interactive expert system for recommending study spots b
 
 **Date:** April 15, 2025
 
+<div>
+    <a href="https://www.loom.com/share/5a930c028a5f4400b34ef31bfa8f4812">
+      <p>Python - Study Spot Recommender - 15 April 2025 - Watch Video</p>
+    </a>
+    <a href="https://www.loom.com/share/5a930c028a5f4400b34ef31bfa8f4812">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/5a930c028a5f4400b34ef31bfa8f4812-e955458295995afe-full-play.gif">
+    </a>
+  </div>
+
 ## Session Summary
 
 ### Initial Setup
