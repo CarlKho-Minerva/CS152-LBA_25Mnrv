@@ -51,36 +51,30 @@ def run_expert_system_gui():
     selected_label.pack(pady=2)
 
     def update_selected_label():
+        def naturalize(val):
+            if val == "short_ride":
+                return "A short ride"
+            elif val == "walk":
+                return "Walking distance"
+            elif val == "far":
+                return "Far from residence"
+            elif val == "yes":
+                return "Yes"
+            elif val == "no":
+                return "No"
+            elif val:
+                return val.capitalize()
+            return val
         if answers or var.get():
             chosen = []
             for i, ans in enumerate(answers):
                 label = askables[i][0]
-                val = ans
-                if val == "short_ride":
-                    val = "a short ride"
-                elif val == "walk":
-                    val = "walking distance"
-                elif val == "far":
-                    val = "far from residence"
-                elif val == "yes":
-                    val = "Yes"
-                elif val == "no":
-                    val = "No"
+                val = naturalize(ans)
                 chosen.append(f"{label} {val}")
             if current[0] < len(askables):
                 if var.get():
                     label = askables[current[0]][0]
-                    val = var.get()
-                    if val == "short_ride":
-                        val = "a short ride"
-                    elif val == "walk":
-                        val = "walking distance"
-                    elif val == "far":
-                        val = "far from residence"
-                    elif val == "yes":
-                        val = "Yes"
-                    elif val == "no":
-                        val = "No"
+                    val = naturalize(var.get())
                     chosen.append(f"{label} {val}")
             selected_label.config(text="Choices so far:\n" + "\n".join(chosen))
         else:
@@ -109,20 +103,28 @@ def run_expert_system_gui():
             show_question(current[0])
         else:
             # All questions answered, run query
+            def naturalize(val):
+                if val == "short_ride":
+                    return "A short ride"
+                elif val == "walk":
+                    return "Walking distance"
+                elif val == "far":
+                    return "Far from residence"
+                elif val == "yes":
+                    return "Yes"
+                elif val == "no":
+                    return "No"
+                elif val:
+                    return val.capitalize()
+                return val
             query = f"study_spot(Name, {', '.join(answers)})"
             results = [sol['Name'] for sol in prolog.query(query)]
             for widget in root.winfo_children():
                 widget.destroy()
             tk.Label(root, text="Your choices:", font=("Arial", 11, "bold")).pack(pady=2)
             tk.Label(root, text="\n".join([
-                f"{askables[i][0]} " + (
-                    "a short ride" if answers[i] == "short_ride" else
-                    "walking distance" if answers[i] == "walk" else
-                    "far from residence" if answers[i] == "far" else
-                    "Yes" if answers[i] == "yes" else
-                    "No" if answers[i] == "no" else
-                    answers[i]
-                ) for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
+                f"{askables[i][0]} {naturalize(answers[i])}"
+                for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
             if results:
                 tk.Label(root, text="Recommended study spots:", font=("Arial", 14)).pack(pady=10)
                 for name in results:
