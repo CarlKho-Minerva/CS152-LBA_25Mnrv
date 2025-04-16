@@ -1,18 +1,25 @@
+# Dev Log – Session Summary
 
-Dove Log – Session Summary
+**Date:** April 15, 2025
 
-Date: April 15, 2025
+### Actions Taken:
+- Built a study spot recommendation expert system integrating Prolog logic with Python
+- Created a comprehensive Prolog knowledge base containing study spot facts and attributes
+- Developed an interactive menu-based system that prompts users for preferences including:
+    - Free access requirements
+    - Food availability
+    - Seating options
+    - Late-night access
+    - WiFi connectivity
+    - Distance considerations
+    - Atmosphere/vibe
+    - Power outlet availability
+- Implemented a preference-gathering function that constructs Prolog queries based on user input
+- Ensured the system provides appropriate feedback, whether displaying matching study spots or notifying when no matches exist
+- Verified functionality in both terminal and Jupyter notebook environments
 
-Actions Taken:
-- Explained how to use Prolog logic in Python for a study spot recommendation expert system.
-- Provided a basic Prolog knowledge base and example queries for study spots.
-- Updated main.py to use an interactive, menu-based system that asks the user a series of questions (askables) about their preferences (free access, food, seating, open late, WiFi, distance, vibe, power outlets).
-- Implemented a function to prompt the user for each askable and build a Prolog query based on their responses.
-- Ensured the system displays matching study spots or a message if no matches are found.
-- Confirmed the code is ready to run in both terminal and Jupyter notebook environments.
-
-Outcome:
-main.py now provides an interactive expert system for recommending study spots based on user preferences, fulfilling the assignment requirements for an interactive, menu-driven expert system using Prolog and Python.
+### Outcome:
+Successfully delivered main.py as an interactive expert system that recommends study spots based on user preferences, meeting all assignment requirements for a menu-driven expert system utilizing Prolog and Python integration.
 
 # Development Log – Study Spot Recommender Expert System
 
