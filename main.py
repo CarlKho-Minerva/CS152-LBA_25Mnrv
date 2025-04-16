@@ -17,24 +17,15 @@ try:
     predicates = list(prolog.query("current_predicate(Name/Arity)"))
     print(f"Found {len(predicates)} predicates in total.")
     print("Looking for recommend/2 predicate...")
-    
+
     # Specifically check for recommend/2
     if list(prolog.query("current_predicate(recommend/2)")):
         print("✓ recommend/2 predicate found!")
     else:
-        print("✗ recommend/2 predicate NOT found!")
-        
-    # Manually add the recommend rule to see if that helps
-    print("Manually adding recommend/2 rule...")
-    # Add as a single line with no extra whitespace - PySWIP can be very strict
-    prolog.assertz("recommend(SpotID, Name) :- spot(SpotID, Name), answered(cost, ReqCost), cost(SpotID, ReqCost), answered(noise, ReqNoise), noise(SpotID, ReqNoise), answered(food, ReqFood), food(SpotID, ReqFood), answered(late, ReqLate), late(SpotID, ReqLate), answered(wifi, ReqWifi), wifi(SpotID, ReqWifi), answered(outlets, ReqOutlets), outlets(SpotID, ReqOutlets).")
-    print("Rule added manually.")
-    
-    # Verify the rule was properly added
-    if list(prolog.query("current_predicate(recommend/2)")):
-        print("✓ recommend/2 predicate found after manual addition!")
-    else:
-        print("✗ recommend/2 predicate STILL NOT found after manual addition!")
+        # If not found, there's likely an issue with kb.pl or the consult process
+        print("✗ recommend/2 predicate NOT found! Check kb.pl for syntax errors.")
+        # It's crucial that recommend/2 loads. The query later will likely fail.
+
 except Exception as e:
     print(f"Error during Prolog predicate check: {e}")
 
