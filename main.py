@@ -54,10 +54,16 @@ def run_expert_system_gui():
         if answers or var.get():
             chosen = []
             for i, ans in enumerate(answers):
-                chosen.append(f"{askables[i][0]} {ans}")
+                label = askables[i][0]
+                val = ans.replace("short_ride", "a short ride").replace("walk", "walking distance").replace("far", "far from residence")
+                val = val.replace("yes", "Yes").replace("no", "No")
+                chosen.append(f"{label} {val}")
             if current[0] < len(askables):
                 if var.get():
-                    chosen.append(f"{askables[current[0]][0]} {var.get()}")
+                    label = askables[current[0]][0]
+                    val = var.get().replace("short_ride", "a short ride").replace("walk", "walking distance").replace("far", "far from residence")
+                    val = val.replace("yes", "Yes").replace("no", "No")
+                    chosen.append(f"{label} {val}")
             selected_label.config(text="Choices so far:\n" + "\n".join(chosen))
         else:
             selected_label.config(text="")
@@ -74,23 +80,6 @@ def run_expert_system_gui():
             option_buttons.append(b)
         update_selected_label()
 
-    def summarize_preferences():
-        summary = []
-        if answers[0] == "yes":
-            summary.append("free access")
-        if answers[1] == "yes":
-            summary.append("food or coffee available")
-        summary.append(f"{answers[2]} seating")
-        if answers[3] == "yes":
-            summary.append("open late")
-        if answers[4] == "yes":
-            summary.append("strong WiFi")
-        summary.append(f"distance: {answers[5].replace('_', ' ')}")
-        summary.append(f"{answers[6]} environment")
-        if answers[7] == "yes":
-            summary.append("power outlets")
-        return "You want a study spot with " + ', '.join(summary) + "."
-
     def next_question(event=None):
         sel = var.get()
         if not sel:
@@ -106,9 +95,10 @@ def run_expert_system_gui():
             results = [sol['Name'] for sol in prolog.query(query)]
             for widget in root.winfo_children():
                 widget.destroy()
-            tk.Label(root, text=summarize_preferences(), font=("Arial", 12), fg="gray").pack(pady=10)
             tk.Label(root, text="Your choices:", font=("Arial", 11, "bold")).pack(pady=2)
-            tk.Label(root, text="\n".join([f"{askables[i][0]} {answers[i]}" for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
+            tk.Label(root, text="\n".join([
+                f"{askables[i][0]} {answers[i].replace('short_ride', 'a short ride').replace('walk', 'walking distance').replace('far', 'far from residence').replace('yes', 'Yes').replace('no', 'No')}"
+                for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
             if results:
                 tk.Label(root, text="Recommended study spots:", font=("Arial", 14)).pack(pady=10)
                 for name in results:
