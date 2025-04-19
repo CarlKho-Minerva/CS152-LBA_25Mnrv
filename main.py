@@ -74,24 +74,23 @@ def consult_kb(prolog):
     prolog.consult(kb_path)
 
 def get_next_question(current_idx, answers, prolog):
-    """Determine the next relevant question based on previous answers"""
+    """Determine the next relevant question based on previous answers and KB content"""
     if current_idx >= len(askables) - 1:
         return None
     
     next_idx = current_idx + 1
-    attribute = get_attribute_from_question(next_idx)
+    next_attribute = get_attribute_from_question(next_idx)
     
-    # Example dynamic logic based on previous answers:
-    # If user selected "none" for food, skip the seating question
-    if attribute == "seating" and any(ans.startswith("none") for ans in answers):
+    # If user selected a quiet study spot (library), skip noise level question
+    if next_attribute == "noise" and any("silent" in ans for ans in answers):
         return get_next_question(next_idx, answers, prolog)
     
-    # If user selected "very_close", skip the wifi question (assuming they can go home if wifi is poor)
-    if attribute == "wifi" and any(ans.startswith("very_close") for ans in answers):
+    # If user selected a spot without WiFi, skip outlet question
+    if next_attribute == "outlets" and any("none" in ans and "wifi" in get_attribute_from_question(i) for i, ans in enumerate(answers)):
         return get_next_question(next_idx, answers, prolog)
     
-    # If user selected "outdoor_seating", skip the outlets question
-    if attribute == "outlets" and any("outdoor_seating" in ans for ans in answers):
+    # If user selected 24-hour spot, skip closing time
+    if next_attribute == "closing_time" and any("24_hours" in ans for ans in answers):
         return get_next_question(next_idx, answers, prolog)
     
     return next_idx
@@ -205,18 +204,15 @@ def run_expert_system_gui():
             )
             return
         
-        # Extract just the Prolog atom from the selected option
         val = sel.split()[0]
-        answers.append(sel)  # Store full text for display
+        answers.append(sel)
         
-        # Get the attribute name based on the current question
         attribute = get_attribute_from_question(current[0])
-        
-        # Assert the user's answer as a fact in Prolog
         prolog.assertz(f"answered({attribute}, {val})")
         
-        if current[0] < len(askables) - 1:
-            current[0] += 1
+        next_idx = get_next_question(current[0], answers, prolog)
+        if next_idx is not None:
+            current[0] = next_idx
             show_question(current[0])
         else:
             show_results()
@@ -230,12 +226,12 @@ def run_expert_system_gui():
 
     def skip_question():
         """Skip the current question and move to the next one"""
-        # Mark this question as skipped
         skipped.add(current[0])
-        answers.append("SKIPPED")  # Placeholder in answers list
+        answers.append("SKIPPED")
         
-        if current[0] < len(askables) - 1:
-            current[0] += 1
+        next_idx = get_next_question(current[0], answers, prolog)
+        if next_idx is not None:
+            current[0] = next_idx
             show_question(current[0])
         else:
             show_results()
