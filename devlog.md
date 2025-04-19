@@ -3,22 +3,24 @@
 **Date:** April 15, 2025
 
 ### Actions Taken:
+
 - Built a study spot recommendation expert system integrating Prolog logic with Python
 - Created a comprehensive Prolog knowledge base containing study spot facts and attributes
 - Developed an interactive menu-based system that prompts users for preferences including:
-    - Free access requirements
-    - Food availability
-    - Seating options
-    - Late-night access
-    - WiFi connectivity
-    - Distance considerations
-    - Atmosphere/vibe
-    - Power outlet availability
+  - Free access requirements
+  - Food availability
+  - Seating options
+  - Late-night access
+  - WiFi connectivity
+  - Distance considerations
+  - Atmosphere/vibe
+  - Power outlet availability
 - Implemented a preference-gathering function that constructs Prolog queries based on user input
 - Ensured the system provides appropriate feedback, whether displaying matching study spots or notifying when no matches exist
 - Verified functionality in both terminal and Jupyter notebook environments
 
 ### Outcome:
+
 Successfully delivered main.py as an interactive expert system that recommends study spots based on user preferences, meeting all assignment requirements for a menu-driven expert system utilizing Prolog and Python integration.
 
 # Development Log – Study Spot Recommender Expert System
@@ -37,27 +39,32 @@ Successfully delivered main.py as an interactive expert system that recommends s
 ## Session Summary
 
 ### Initial Setup
+
 - Created a Python project using PySWIP (Prolog-Python bridge) and tkinter for the GUI.
 - Defined a Prolog knowledge base with several study spot facts and attributes.
 - Implemented a basic Python script to query the Prolog knowledge base.
 
 ### Interactive CLI & GUI
+
 - Added an interactive command-line interface to ask users a series of questions (askables) about their preferences.
 - Extended the system to a tkinter-based GUI, presenting one question at a time and collecting user input via radio buttons.
 - Enabled keyboard controls: number keys for option selection and Enter to proceed.
 - Added a "Restart" button to allow users to retake the questionnaire.
 
 ### Natural Language & UX Improvements
+
 - Replaced technical values (e.g., 'short_ride') with natural language equivalents (e.g., 'A short ride') throughout the interface.
 - Capitalized all displayed values for clarity and professionalism.
 - Displayed a running list of user choices in the GUI, updating in real time as selections are made.
 - Removed redundant summary blurbs and ensured all output is user-friendly and conversational.
 
 ### Testing & Validation
+
 - Verified that the system works in both terminal and GUI modes.
 - Ensured that all user choices and recommendations are displayed in clear, natural language.
 
 ## Next Steps / To-Do
+
 - Expand the Prolog knowledge base with more real-world study spots and attributes.
 - Optionally, add more advanced filtering or a map integration.
 - Collect user feedback for further UX improvements.
@@ -105,11 +112,13 @@ Three distinct test cases are implemented:
 ## Running the Application
 
 1. Install required packages:
+
    ```
    pip install pyswip tabulate
    ```
 
 2. Run the GUI application:
+
    ```
    python main.py
    ```
@@ -149,6 +158,7 @@ outlets(ID, OutletAvailability).
 ```
 
 ### Design Decisions:
+
 - **ID-based Relations**: Each spot has a unique ID (1-19) that connects all of its attributes.
 - **Normalized Structure**: Each attribute is stored in its own predicate for better maintenance.
 - **Multiple Seating Types**: Seating is the only attribute that can have multiple values per spot.
@@ -161,7 +171,7 @@ The core of the system is the `recommend/2` rule, which uses a flexible algorith
 recommend(SpotID, Name) :-
     % Get the spot's name
     spot(SpotID, Name),
-    
+
     % Check if all answered criteria match
     (answered(location, Loc) -> location(SpotID, Loc) ; true),
     (answered(cost, Cost) -> cost(SpotID, Cost) ; true),
@@ -183,6 +193,7 @@ recommend(SpotID, Name) :-
 3. **All Conditions Must Match**: For a spot to be recommended, all the conditions that the user specified must match.
 
 ### Advantage of This Approach:
+
 - **Flexibility**: Users don't need to specify every criterion.
 - **Readable Code**: The structure makes it easy to understand how matching works.
 - **Extensibility**: New criteria can be added by following the same pattern.
@@ -193,7 +204,7 @@ Three distinct test cases are implemented to verify the system's effectiveness:
 
 ```prolog
 % Test cases
-test_case(1, "Quiet, free, near campus") :- 
+test_case(1, "Quiet, free, near campus") :-
     assert(answered(noise, silent)),
     assert(answered(cost, low)),
     assert(answered(location, close)).
@@ -212,10 +223,12 @@ test_case(3, "Outdoor, food available, any cost") :-
 ### Each Test Case Serves a Specific Purpose:
 
 1. **Case 1 (Quiet, free, near campus)**:
+
    - Tests spots that meet all three criteria: noise=silent, cost=low, location=close
    - Expected result: SF Public Library
 
 2. **Case 2 (Lively cafe, outlets needed, Mission)**:
+
    - Tests a different combination: noise=high, outlets=many, location=far, wifi=good
    - Expected results: Spro Mission (and potentially Sanas Coffee)
 
@@ -236,7 +249,8 @@ test_case(3, "Outdoor, food available, any cost") :-
 
 The Prolog knowledge base integrates with Python through PySwip:
 
-1. **Loading the KB**: 
+1. **Loading the KB**:
+
    ```python
    def consult_kb(prolog):
        kb_path = os.path.join(os.path.dirname(__file__), 'kb.pl')
@@ -244,6 +258,7 @@ The Prolog knowledge base integrates with Python through PySwip:
    ```
 
 2. **Asserting User Answers**:
+
    ```python
    prolog.assertz(f"answered({attribute}, {val})")
    ```
@@ -259,7 +274,7 @@ The GUI has been updated to allow users to skip questions they don't consider im
 
 1. **Skip Button Added**: Users can skip any question they don't want to answer.
 2. **Optional Criteria**: The system will only filter based on the criteria the user actually provides.
-3. **Keyboard Shortcuts**: 
+3. **Keyboard Shortcuts**:
    - Enter key to proceed to the next question
    - Escape key to skip the current question
    - Number keys (1-N) to select options quickly
@@ -288,3 +303,26 @@ Possible improvements to the Prolog logic:
 - **Flexible Matching**: The conditional approach to criteria made the system more user-friendly.
 
 This implementation successfully meets the requirements for the Prolog logic component, providing a robust and flexible recommendation system.
+
+---
+
+**Date:** April 19, 2025 - Matvii, GUI improvement and code refactor
+
+## Changes Made
+
+- Refactored the codebase into modular components:
+  - `utils.py`: Helper functions and constants
+  - `gui.py`: UI component creation and management
+  - `main.py`: Core application logic
+- Added proper error handling for GUI state management
+- Updated requirements.txt to reflect dependencies
+
+### Files Modified/Added
+
+- Modified: main.py, requirements.txt
+- Added: gui.py, utils.py
+
+### Outcome
+
+Successfully improved code organization and maintainability and enhancing the UX by making the GUI more
+intuitive and easy to use.
