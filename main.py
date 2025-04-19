@@ -2,6 +2,18 @@ from pyswip import Prolog
 import tkinter as tk
 from tkinter import ttk, messagebox
 import os
+from PIL import Image, ImageTk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+from ttkbootstrap.tooltip import ToolTip
+from utils import ICONS, format_option, get_attribute_from_question
+from gui import (
+    create_progress_bar, 
+    create_question_card, 
+    create_review_panel, 
+    create_navigation_buttons,
+    show_results_view
+)
 
 # List of questions and options to display in the GUI
 askables = [
@@ -56,12 +68,32 @@ askables = [
          "every_seat (built-in)"]),
 ]
 
-
 def consult_kb(prolog):
     """Load the knowledge base from kb.pl file"""
     kb_path = os.path.join(os.path.dirname(__file__), 'kb.pl')
     prolog.consult(kb_path)
 
+def get_next_question(current_idx, answers, prolog):
+    """Determine the next relevant question based on previous answers and KB content"""
+    if current_idx >= len(askables) - 1:
+        return None
+    
+    next_idx = current_idx + 1
+    next_attribute = get_attribute_from_question(next_idx)
+    
+    # If user selected a quiet study spot (library), skip noise level question
+    if next_attribute == "noise" and any("silent" in ans for ans in answers):
+        return get_next_question(next_idx, answers, prolog)
+    
+    # If user selected a spot without WiFi, skip outlet question
+    if next_attribute == "outlets" and any("none" in ans and "wifi" in get_attribute_from_question(i) for i, ans in enumerate(answers)):
+        return get_next_question(next_idx, answers, prolog)
+    
+    # If user selected 24-hour spot, skip closing time
+    if next_attribute == "closing_time" and any("24_hours" in ans for ans in answers):
+        return get_next_question(next_idx, answers, prolog)
+    
+    return next_idx
 
 def run_expert_system_gui():
     """Main function to run the expert system with GUI"""
@@ -70,231 +102,158 @@ def run_expert_system_gui():
     # Load the knowledge base from the external file
     consult_kb(prolog)
 
-    root = tk.Tk()
+    # Use ttkbootstrap for modern styling
+    root = ttk.Window(themename="cosmo")
     root.title("Study Spot Recommender")
-    root.geometry("520x450")  # Made slightly taller for the Skip button
+    root.geometry("800x600")
 
     answers = []
     skipped = set()  # Keep track of skipped questions
     current = [0]
 
-    instructions = tk.Label(root, text="Answer each question to get a study spot recommendation.\nUse number keys or mouse to select, Enter to continue, or skip if not important.", font=("Arial", 11), fg="gray")
-    instructions.pack(pady=5)
+    # Create main container
+    main_container = ttk.Frame(root, padding="20")
+    main_container.pack(fill=tk.BOTH, expand=True)
 
-    question_label = tk.Label(root, text=askables[0][0], font=("Arial", 14))
-    question_label.pack(pady=10)
+    # Create UI components
+    progress_var = tk.DoubleVar(root)
+    progress_frame, progress_label = create_progress_bar(main_container, progress_var)
+    
+    card_frame, icon_label, question_label = create_question_card(main_container, askables[0][0])
+    
+    var = tk.StringVar(root)
+    options_frame = ttk.Frame(card_frame, padding=20)
+    options_frame.pack(fill=tk.BOTH, expand=True)
 
-    var = tk.StringVar()
-    options_frame = tk.Frame(root)
-    options_frame.pack()
+    review_frame, selections_text = create_review_panel(main_container)
 
-    option_buttons = []
-    selected_label = tk.Label(root, text="", font=("Arial", 11), fg="gray")
-    selected_label.pack(pady=2)
+    def update_progress():
+        """Update progress bar and label"""
+        progress = (current[0] / len(askables)) * 100
+        progress_var.set(progress)
+        progress_label.config(text=f"Question {current[0] + 1}/{len(askables)}")
 
-    def update_selected_label():
+    def update_review_panel():
+        """Update the review panel with current selections"""
+        selections_text.config(state=tk.NORMAL)
+        selections_text.delete(1.0, tk.END)
+        
         chosen = []
         for i, ans in enumerate(answers):
-            if i not in skipped:  # Only show non-skipped answers
-                chosen.append(f"{askables[i][0]} {ans}")
+            if i not in skipped:
+                formatted_ans = format_option(ans)
+                chosen.append(f"{ICONS.get(get_attribute_from_question(i), '•')} {askables[i][0]}\n   ➜ {formatted_ans}")
+        
         if current[0] < len(askables) and var.get():
-            chosen.append(f"{askables[current[0]][0]} {var.get()}")
-        selected_label.config(text="Choices so far:\n" + "\n".join(chosen))
+            formatted_current = format_option(var.get())
+            chosen.append(f"{ICONS.get(get_attribute_from_question(current[0]), '•')} {askables[current[0]][0]}\n   ➜ {formatted_current}")
+        
+        selections_text.insert(tk.END, "\n\n".join(chosen))
+        selections_text.config(state=tk.DISABLED)
 
     def show_question(idx):
+        """Display a question with modern styling"""
+        # Update progress
+        update_progress()
+        
+        # Update question and icon
         question_label.config(text=askables[idx][0])
+        icon_label.config(text=ICONS.get(get_attribute_from_question(idx), "❓"))
+        
+        # Clear and update options
         for widget in options_frame.winfo_children():
             widget.destroy()
-        var.set("")
-        option_buttons.clear()
-        for i, opt in enumerate(askables[idx][1]):
-            ttk.Radiobutton(options_frame, text=f"{i+1}. {opt}", variable=var, value=opt, command=update_selected_label).pack(anchor="w", padx=20, pady=2)
-        update_selected_label()
-
-    def skip_question():
-        """Skip the current question and move to the next one"""
-        # Mark this question as skipped
-        skipped.add(current[0])
-        answers.append("SKIPPED")  # Placeholder in answers list
         
-        if current[0] < len(askables) - 1:
-            current[0] += 1
+        var.set("")
+        for i, opt in enumerate(askables[idx][1]):
+            option_frame = ttk.Frame(options_frame)
+            option_frame.pack(fill=tk.X, pady=2)
+            
+            formatted_opt = format_option(opt)
+            rb = ttk.Radiobutton(
+                option_frame,
+                text=formatted_opt,
+                variable=var,
+                value=opt,
+                style='TRadiobutton',
+                command=update_review_panel
+            )
+            rb.pack(side=tk.LEFT, padx=5)
+            
+            # Add tooltip
+            ToolTip(rb, text=f"Option {i+1}: {formatted_opt}")
+        
+        update_review_panel()
+
+    def back_question():
+        """Go back to the previous question"""
+        if current[0] > 0:
+            current[0] -= 1
+            if len(answers) > current[0]:
+                answers.pop()
+            show_question(current[0])
+
+    def next_question(event=None):
+        """Proceed to next question with validation"""
+        sel = var.get()
+        if not sel:
+            messagebox.showwarning(
+                "Input Required",
+                "Please select an option or click Skip if this criterion is not important.",
+                parent=root
+            )
+            return
+        
+        val = sel.split()[0]
+        answers.append(sel)
+        
+        attribute = get_attribute_from_question(current[0])
+        prolog.assertz(f"answered({attribute}, {val})")
+        
+        next_idx = get_next_question(current[0], answers, prolog)
+        if next_idx is not None:
+            current[0] = next_idx
             show_question(current[0])
         else:
             show_results()
 
     def show_results():
-        """Show the recommendation results"""
-        # Query the recommended spots
+        """Show recommendations with modern styling"""
         results = list(prolog.query("recommend(ID, Name)"))
         spot_names = [sol['Name'] for sol in results]
         
-        # Display results
-        for widget in root.winfo_children():
-            widget.destroy()
-        
-        tk.Label(root, text="Your choices:", font=("Arial", 11, "bold")).pack(pady=2)
-        
-        # Show only non-skipped choices
-        choices = []
-        for i, ans in enumerate(answers):
-            if i not in skipped:
-                choices.append(f"{askables[i][0]} {ans}")
-        
-        choices_text = "\n".join(choices) if choices else "No specific criteria selected"
-        tk.Label(root, text=choices_text, font=("Arial", 11), fg="gray").pack(pady=2)
-        
-        if spot_names:
-            tk.Label(root, text="Recommended study spots:", font=("Arial", 14)).pack(pady=10)
-            for name in spot_names:
-                tk.Label(root, text=f"- {name}", font=("Arial", 12)).pack(anchor="w")
-        else:
-            tk.Label(root, text="No matching study spots found.", font=("Arial", 14)).pack(pady=10)
-        
-        # Add restart button
-        def restart():
-            # Clear asserted answers
-            list(prolog.query("clear_test"))
-            root.destroy()
-            run_expert_system_gui()
-        
-        ttk.Button(root, text="Restart", command=restart).pack(pady=20)
+        show_results_view(main_container, answers, askables, spot_names, restart)
 
-    def next_question(event=None):
-        sel = var.get()
-        if not sel:
-            messagebox.showwarning("Input required", "Please select an option or click Skip if this criterion is not important.")
-            return
+    def skip_question():
+        """Skip the current question and move to the next one"""
+        skipped.add(current[0])
+        answers.append("SKIPPED")
         
-        # Extract just the Prolog atom from the selected option
-        val = sel.split()[0]
-        answers.append(val)
-        
-        # Get the attribute name based on the current question
-        attribute = get_attribute_from_question(current[0])
-        
-        # Assert the user's answer as a fact in Prolog
-        prolog.assertz(f"answered({attribute}, {val})")
-        
-        if current[0] < len(askables) - 1:
-            current[0] += 1
+        next_idx = get_next_question(current[0], answers, prolog)
+        if next_idx is not None:
+            current[0] = next_idx
             show_question(current[0])
         else:
             show_results()
 
-    def get_attribute_from_question(question_idx):
-        """Map question index to the corresponding Prolog attribute name"""
-        attributes = [
-            "location", "cost", "food", "seating", 
-            "closing_time", "wifi", "noise", "outlets"
-        ]
-        return attributes[question_idx]
-
-    def on_key(event):
-        if event.char.isdigit():
-            idx = int(event.char) - 1
-            if 0 <= idx < len(askables[current[0]][1]):
-                var.set(askables[current[0]][1][idx])
-                update_selected_label()
-        if event.keysym == "Return":
-            next_question()
-        if event.keysym == "Escape":
-            skip_question()
-
-    # Create button frame to hold Next and Skip buttons
-    button_frame = tk.Frame(root)
-    button_frame.pack(pady=10)
-    
-    next_btn = ttk.Button(button_frame, text="Next", command=next_question)
-    next_btn.pack(side=tk.LEFT, padx=5)
-    
-    skip_btn = ttk.Button(button_frame, text="Skip this question", command=skip_question)
-    skip_btn.pack(side=tk.LEFT, padx=5)
-
-    # Add buttons for test cases
-    def run_test_case(case_num):
-        # Clear previous answers
-        for widget in root.winfo_children():
-            widget.destroy()
-        
-        # Clear any previous answers in Prolog
-        list(prolog.query("clear_test"))
-        
-        # Get test case description
-        result = list(prolog.query(f"test_case({case_num}, Description)"))
-        description = result[0]['Description'] if result else f"Test Case {case_num}"
-        
-        # Run the test case
-        list(prolog.query(f"test_case({case_num}, _)"))
-        
-        # Get recommendations
-        results = list(prolog.query("recommend(ID, Name)"))
-        spot_names = [sol['Name'] for sol in results]
-        
-        # Display results
-        tk.Label(root, text=f"Test Case {case_num}: {description}", font=("Arial", 14, "bold")).pack(pady=10)
-        
-        # Get and display the criteria used
-        criteria = list(prolog.query("answered(Attribute, Value)"))
-        tk.Label(root, text="Test Criteria:", font=("Arial", 12, "bold")).pack(pady=5, anchor="w", padx=20)
-        for c in criteria:
-            tk.Label(root, text=f"- {c['Attribute']}: {c['Value']}", font=("Arial", 11)).pack(anchor="w", padx=40)
-        
-        tk.Label(root, text="\nRecommendations:", font=("Arial", 12, "bold")).pack(pady=5, anchor="w", padx=20)
-        if spot_names:
-            for name in spot_names:
-                tk.Label(root, text=f"- {name}", font=("Arial", 11)).pack(anchor="w", padx=40)
-        else:
-            tk.Label(root, text="No matching study spots found.", font=("Arial", 11)).pack(anchor="w", padx=40)
-        
-        # Add buttons to return to main menu or try other test cases
-        btn_frame = tk.Frame(root)
-        btn_frame.pack(pady=20)
-        
-        ttk.Button(btn_frame, text="Run Normal Mode", command=lambda: restart()).pack(side=tk.LEFT, padx=5)
-        for i in range(1, 4):
-            if i != case_num:  # Don't show button for current test case
-                ttk.Button(btn_frame, text=f"Test Case {i}", 
-                          command=lambda i=i: run_test_case(i)).pack(side=tk.LEFT, padx=5)
-
-    def show_test_menu():
-        """Show menu of test cases"""
-        for widget in root.winfo_children():
-            widget.destroy()
-        
-        tk.Label(root, text="Study Spot Recommender Tests", font=("Arial", 16, "bold")).pack(pady=20)
-        tk.Label(root, text="Select a test case to run:", font=("Arial", 12)).pack(pady=10)
-        
-        test_frame = tk.Frame(root)
-        test_frame.pack(pady=10)
-        
-        test_cases = [
-            "Test Case 1: Quiet, free, near campus",
-            "Test Case 2: Lively cafe, outlets needed, Mission",
-            "Test Case 3: Outdoor, food available, any cost"
-        ]
-        
-        for i, test in enumerate(test_cases, 1):
-            ttk.Button(test_frame, text=test, 
-                      command=lambda i=i: run_test_case(i)).pack(anchor="w", pady=5, padx=20)
-        
-        ttk.Button(root, text="Start Normal Mode", 
-                  command=lambda: restart()).pack(pady=20)
-
-    # Add test mode button
-    test_btn = ttk.Button(root, text="Run Tests", command=show_test_menu)
-    test_btn.pack(pady=5)
-
     def restart():
-        # Clear asserted answers
-        list(prolog.query("clear_test"))
-        root.destroy()
-        run_expert_system_gui()
+        """Restart the application"""
+        root.destroy()  # Destroy the current window
+        list(prolog.query("clear_test"))  # Clear Prolog facts
+        run_expert_system_gui()  # Start a new instance
 
+    # Create navigation buttons
+    create_navigation_buttons(main_container, back_question, skip_question, next_question)
+
+    # Key bindings
+    root.bind("<Return>", next_question)
+    root.bind("<Escape>", lambda e: skip_question())
+    root.bind("<Left>", lambda e: back_question())
+    root.bind("<Right>", lambda e: next_question())
+
+    # Initialize first question
     show_question(0)
-    root.bind("<Key>", on_key)
     root.mainloop()
-
 
 if __name__ == "__main__":
     run_expert_system_gui()
