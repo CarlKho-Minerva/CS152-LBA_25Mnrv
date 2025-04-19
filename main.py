@@ -3,27 +3,89 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 prolog_kb = """
-study_spot(library, yes, no, indoor, yes, yes, walk, quiet, yes).
-study_spot(cafe, yes, yes, indoor, no, yes, short_ride, lively, yes).
-study_spot(park, yes, no, outdoor, no, no, walk, lively, no).
-study_spot(student_center, yes, yes, indoor, yes, yes, walk, lively, yes).
+study_spot(salesforce_park,    close,            low,    none,               [outdoor_seating],              closes_8_10pm,     poor,     low,      none).
+study_spot(capital_one_cafe,    close,            medium, full_menu,         [private_study_rooms,shared_long_tables], closes_before_8pm, good, moderate, many).
+study_spot(sf_public_library,   close,            low,    snacks_only,       [quiet_individual,shared_long_tables,comfortable_lounge], closes_8_10pm, good, silent, every_seat).
+study_spot(philz_coffee,        close,            medium, full_menu,         [comfortable_lounge,outdoor_seating,shared_long_tables,regular_tables], closes_before_8pm, good, moderate, few).
+study_spot(haus_coffee,         far,              medium, full_menu,         [shared_long_tables,comfortable_lounge,outdoor_seating,regular_tables], closes_before_5pm, good, low, many).
+study_spot(southeast_community, far,              low,    coffee_only,       [shared_long_tables,outdoor_seating], closes_before_5pm, good, moderate, few).
+study_spot(delah_coffee,        moderate_commute, high,   full_menu,         [comfortable_lounge,regular_tables], closes_before_8pm, good, moderate, many).
+study_spot(sanas_coffee,        moderate_commute, high,   full_menu,         [comfortable_lounge,regular_long_tables,shared_long_tables], open_until_midnight, good, high, many).
+study_spot(ikea,                very_close,       low,    full_menu,         [shared_long_tables,regular_tables], closes_before_8pm, good, moderate, few).
+study_spot(spro_mission,        far,              high,   full_menu,         [outdoor_seating,regular_tables], closes_before_5pm, good, high, many).
+study_spot(progressive_grounds, far,              medium, full_menu,         [shared_long_tables,outdoor_seating,comfortable_lounge,regular_tables], closes_before_8pm, good, low, few).
+study_spot(ucsf_library,        far,              low,    coffee_only,       [quiet_individual,shared_long_tables,comfortable_lounge,regular_tables], closes_before_8pm, good, silent, few).
+study_spot(comptons_coffee,     far,              medium, full_menu,         [shared_long_tables,comfortable_lounge,outdoor_seating], closes_before_5pm, good, moderate, few).
+study_spot(black_bird,          far,              medium, full_menu,         [comfortable_lounge,outdoor_seating], closes_before_8pm, none, moderate, few).
+study_spot(home_coffee_roast,   close,            medium, full_menu,         [shared_long_tables,comfortable_lounge], closes_before_5pm, good, moderate, many).
+study_spot(sight_glass,         close,            medium, full_menu,         [shared_long_tables],        closes_before_5pm, none, moderate, few).
+study_spot(rise_and_grind,      far,              high,   full_menu,         [shared_long_tables],        closes_before_5pm, good, moderate, few).
+study_spot(matching_half,       far,              high,   full_menu,         [regular_tables,comfortable_lounge], closes_before_5pm, poor, moderate, few).
+study_spot(ballast_coffee,      far,              medium, full_menu,         [shared_long_tables],        closes_before_5pm, good, moderate, many).
 """
 
 askables = [
-    ("Do you want free access?", ["yes", "no"]),
-    ("Do you want coffee or food available?", ["yes", "no"]),
-    ("Do you want indoor or outdoor seating?", ["indoor", "outdoor"]),
-    ("Do you need it open late (after 8pm)?", ["yes", "no"]),
-    ("Do you need strong and reliable WiFi?", ["yes", "no"]),
-    ("How far are you willing to travel from residence?", ["walk", "short_ride", "far"]),
-    ("Do you prefer a quiet or lively environment?", ["quiet", "lively"]),
-    ("Do you need power outlets available?", ["yes", "no"]),
+    ("How close should it be?",
+        ["very_close (<= 5 min walk)", 
+         "close (6-15 min walk)", 
+         "moderate_commute (16-30 min via walk/transit)", 
+         "far (> 30 min commute)"]),
+
+    ("What cost level can you afford?",
+        ["free (no charge)", 
+         "low (<= $5)", 
+         "medium ($5-$15)", 
+         "high (>= $15)"]),
+
+    ("What food/coffee options do you need?",
+        ["none (no food or drink)", 
+         "coffee_only (just drinks)", 
+         "snacks_only (light bites)", 
+         "full_menu (meals & drinks)"]),
+
+    ("Which seating type do you prefer? (multi-select)",
+        ["quiet_individual (e.g. library carrel)", 
+         "shared_long_tables", 
+         "comfortable_lounge (sofas)", 
+         "outdoor_seating", 
+         "regular_tables", 
+         "private_study_rooms"]),
+
+    ("Which closing time works for you?",
+        ["closes_before_5pm (before 5 PM)", 
+         "closes_before_8pm (before 8 PM)", 
+         "closes_8_10pm (8 PM-10 PM)", 
+         "open_until_midnight (until 12 AM)", 
+         "24_hours (always open)"]),
+
+    ("What WiFi quality do you need?",
+        ["none (no WiFi)", 
+         "poor (< 5 Mbps)",
+         "good (20-50 Mbps)"]),
+
+    ("What noise level do you prefer?",
+        ["silent (library-quiet)", 
+         "low (soft background)", 
+         "moderate (normal cafe)", 
+         "high (busy/crowded)"]),
+
+    ("What outlet availability do you need?",
+        ["none", 
+         "few (scattered)", 
+         "many (multiple nearby)", 
+         "every_seat (built-in)"]),
 ]
+
 
 def consult_kb(prolog, kb_str):
     for line in kb_str.strip().split('\n'):
         if line:
             prolog.assertz(line.strip('.'))
+    # add member/2 and valid_spot/9
+    prolog.assertz("member(X,[X|_])")
+    prolog.assertz("member(X,[_|T]) :- member(X,T)")
+    prolog.assertz("valid_spot(Name, Loc, Cost, Food, Seat, Close, Wifi, Noise, Out) :- study_spot(Name, Loc, Cost, Food, Seats, Close, Wifi, Noise, Out), member(Seat, Seats)")
+
 
 def run_expert_system_gui():
     prolog = Prolog()
@@ -31,7 +93,7 @@ def run_expert_system_gui():
 
     root = tk.Tk()
     root.title("Study Spot Recommender")
-    root.geometry("520x350")
+    root.geometry("520x400")
 
     answers = []
     current = [0]
@@ -51,34 +113,12 @@ def run_expert_system_gui():
     selected_label.pack(pady=2)
 
     def update_selected_label():
-        def naturalize(val):
-            if val == "short_ride":
-                return "A short ride"
-            elif val == "walk":
-                return "Walking distance"
-            elif val == "far":
-                return "Far from residence"
-            elif val == "yes":
-                return "Yes"
-            elif val == "no":
-                return "No"
-            elif val:
-                return val.capitalize()
-            return val
-        if answers or var.get():
-            chosen = []
-            for i, ans in enumerate(answers):
-                label = askables[i][0]
-                val = naturalize(ans)
-                chosen.append(f"{label} {val}")
-            if current[0] < len(askables):
-                if var.get():
-                    label = askables[current[0]][0]
-                    val = naturalize(var.get())
-                    chosen.append(f"{label} {val}")
-            selected_label.config(text="Choices so far:\n" + "\n".join(chosen))
-        else:
-            selected_label.config(text="")
+        chosen = []
+        for i, ans in enumerate(answers):
+            chosen.append(f"{askables[i][0]} {ans}")
+        if current[0] < len(askables) and var.get():
+            chosen.append(f"{askables[current[0]][0]} {var.get()}")
+        selected_label.config(text="Choices so far:\n" + "\n".join(chosen))
 
     def show_question(idx):
         question_label.config(text=askables[idx][0])
@@ -87,9 +127,7 @@ def run_expert_system_gui():
         var.set("")
         option_buttons.clear()
         for i, opt in enumerate(askables[idx][1]):
-            b = ttk.Radiobutton(options_frame, text=f"{i+1}. {opt}", variable=var, value=opt, command=update_selected_label)
-            b.pack(anchor="w", padx=20, pady=2)
-            option_buttons.append(b)
+            ttk.Radiobutton(options_frame, text=f"{i+1}. {opt}", variable=var, value=opt, command=update_selected_label).pack(anchor="w", padx=20, pady=2)
         update_selected_label()
 
     def next_question(event=None):
@@ -97,34 +135,18 @@ def run_expert_system_gui():
         if not sel:
             messagebox.showwarning("Input required", "Please select an option.")
             return
-        answers.append(sel)
+        answers.append(sel.split()[0])  # get just the Prolog atom
         if current[0] < len(askables) - 1:
             current[0] += 1
             show_question(current[0])
         else:
-            # All questions answered, run query
-            def naturalize(val):
-                if val == "short_ride":
-                    return "A short ride"
-                elif val == "walk":
-                    return "Walking distance"
-                elif val == "far":
-                    return "Far from residence"
-                elif val == "yes":
-                    return "Yes"
-                elif val == "no":
-                    return "No"
-                elif val:
-                    return val.capitalize()
-                return val
-            query = f"study_spot(Name, {', '.join(answers)})"
+            # query using valid_spot instead of study_spot
+            query = f"valid_spot(Name, {', '.join(answers)})"
             results = [sol['Name'] for sol in prolog.query(query)]
             for widget in root.winfo_children():
                 widget.destroy()
             tk.Label(root, text="Your choices:", font=("Arial", 11, "bold")).pack(pady=2)
-            tk.Label(root, text="\n".join([
-                f"{askables[i][0]} {naturalize(answers[i])}"
-                for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
+            tk.Label(root, text="\n".join([f"{askables[i][0]} {answers[i]}" for i in range(len(answers))]), font=("Arial", 11), fg="gray").pack(pady=2)
             if results:
                 tk.Label(root, text="Recommended study spots:", font=("Arial", 14)).pack(pady=10)
                 for name in results:
@@ -137,13 +159,11 @@ def run_expert_system_gui():
             ttk.Button(root, text="Restart", command=restart).pack(pady=20)
 
     def on_key(event):
-        # Number key selection
         if event.char.isdigit():
             idx = int(event.char) - 1
             if 0 <= idx < len(option_buttons):
                 var.set(askables[current[0]][1][idx])
                 update_selected_label()
-        # Enter key to proceed
         if event.keysym == "Return":
             next_question()
 
@@ -155,4 +175,4 @@ def run_expert_system_gui():
     root.mainloop()
 
 if __name__ == "__main__":
-    run_expert_system_gui()
+   	run_expert_system_gui()
